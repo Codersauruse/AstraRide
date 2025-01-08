@@ -1,0 +1,1 @@
+const getAllAvailableSeats = (req, res) => {};

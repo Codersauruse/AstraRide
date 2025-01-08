@@ -1,9 +1,10 @@
 import Bus from "../models/Bus.js";
+import mongoose from "mongoose";
 
 //for every user
 const getAllBuses = async (req, res) => {
   try {
-    const { destination } = req.body; // Get the destination from the request body
+    const { destination } = req.query; // Get the destination from the request body
 
     let buses;
 
@@ -24,6 +25,28 @@ const getAllBuses = async (req, res) => {
   } catch (error) {
     // Handle errors (e.g., database errors)
     console.error("Error fetching buses:", error);
+    return res.status(500).json({ msg: "Internal Server Error" });
+  }
+};
+
+const getBus = async (req, res) => {
+  try {
+    const { busId } = req.params;
+    console.log(busId);
+    // Validate busId
+    if (!mongoose.Types.ObjectId.isValid(busId)) {
+      return res.status(400).json({ msg: "Invalid bus ID" });
+    }
+
+    // Convert busId to ObjectId and find the bus
+    const bus = await Bus.findById(busId);
+    if (!bus) {
+      return res.status(404).json({ msg: "No buses found" });
+    }
+
+    return res.status(200).json(bus);
+  } catch (error) {
+    console.error("Error fetching bus:", error);
     return res.status(500).json({ msg: "Internal Server Error" });
   }
 };
@@ -79,4 +102,4 @@ const deleteBus = async (req, res) => {
   }
 };
 
-export { getAllBuses, addBus, updateBus, deleteBus };
+export { getAllBuses, addBus, updateBus, deleteBus, getBus };
