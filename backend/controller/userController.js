@@ -28,7 +28,13 @@ const userLogin = async (req, res) => {
 
       res
         .status(201)
-        .json({ success: true, id: user._id, roles: user.role, token: token });
+        .json({
+          success: true,
+          id: user._id,
+          username: username,
+          roles: user.role,
+          token: token,
+        });
     } else {
       res.status(500).json({ success: false, msg: "invalid credintials" });
     }
