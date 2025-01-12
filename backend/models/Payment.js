@@ -10,15 +10,15 @@ const paymentSchema = new mongoose.Schema({
   amount: { type: Number, required: true },
   paymentStatus: {
     type: String,
-    enum: ["Pending", "Completed", "Failed"],
+    enum: ["unpaid", "paid", "Failed"],
     required: true,
   },
   paymentMethod: {
     type: String,
     enum: ["DebitCard", "CreditCard", "Cash"],
-    required: true,
+    required: false,
   },
-  paymentDate: { type: Date, required: true },
+  paymentDate: { type: String, required: false },
 });
 
 export default mongoose.model("Payment", paymentSchema);
