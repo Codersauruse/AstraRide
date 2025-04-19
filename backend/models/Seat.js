@@ -10,6 +10,7 @@ const seatSchema = new mongoose.Schema({
     enum: ["Available", "Reserved"],
     default: "Available",
   },
+  date: { type: Date, required: false },
 });
 
 export default mongoose.model("Seat", seatSchema);

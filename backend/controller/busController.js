@@ -4,7 +4,7 @@ import UnavailableBus from "../models/UnavailableBus.js";
 
 const getAllBuses = async (req, res) => {
   try {
-    const { destination } = req.query; // Get the destination from query parameters
+    const { destination, date } = req.query; // Get the destination from query parameters
 
     // Fetch buses based on the destination
     const buses = destination
@@ -17,7 +17,9 @@ const getAllBuses = async (req, res) => {
     // Create a Set of unavailable bus IDs for efficient lookup
 
     const today = new Date();
-    const formattedDate = today.toISOString().split("T")[0];
+    // const formattedDate = today.toISOString().split("T")[0];
+
+    const formattedDate = date != "" ? date : today.toISOString().split("T")[0];
 
     // Create a Set of unavailable bus IDs for efficient lookup
     const unavailableBusIds = new Set(

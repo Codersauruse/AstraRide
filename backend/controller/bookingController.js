@@ -1,10 +1,11 @@
 import mongoose from "mongoose";
-
+import { updateRealtimeBooking } from "../firebase/controllers/RealtimeBookingController.js";
+import { saveSeats } from "../firebase/controllers/RealTimeSeatController.js";
 import Booking from "../models/Booking.js";
 import Bus from "../models/Bus.js";
 import Payment from "../models/Payment.js";
 import User from "../models/User.js";
-import bookingRouter from "../route/bookingRoute.js";
+import moment from "moment";
 
 //view all the bookings according to user
 const getAllBookings = async (req, res) => {
@@ -76,30 +77,61 @@ const addToBookings = async (req, res) => {
 //booking a bus (confirm the booking by selecting nnumber of seats)
 const confirmBooking = async (req, res) => {
   try {
-    const { userId, busId, numberOfSeats, date } = req.body;
-
-    if (!userId || !busId || !numberOfSeats || !date) {
+    const { userId, busId, bookingId, numberOfSeats, seats, date } = req.body;
+    const seatarr = JSON.parse(seats);
+    if (
+      !userId ||
+      !busId ||
+      !bookingId ||
+      !numberOfSeats ||
+      !date ||
+      seatarr.length == 0
+    ) {
       return res.status(400).json({ message: "Missing required fields" });
     }
 
-    const newBooking = new Booking(req.body); // Create a new booking using the data from the request body
-    await newBooking.save(); // Save the booking to MongoDB
-    const bus = await Bus.findById(busId);
+    // Fetch the existing booking
+    const oldBooking = await Booking.findById(bookingId);
+    if (!oldBooking) {
+      return res.status(404).json({ message: "Booking not found" });
+    }
 
+    // Confirm the booking
+    oldBooking.isConfirmed = true;
+    oldBooking.date = moment(date, "YYYY-MM-DD").format("YYYY-MM-DD");
+
+    oldBooking.seatIds.push(...seatarr);
+    await oldBooking.save(); // Save the updated booking
+    //updating realtime booking
+    updateRealtimeBooking(bookingId, seatarr, date);
+
+    // Fetch bus details
+    const bus = await Bus.findById(busId);
+    if (!bus) {
+      return res.status(404).json({ message: "Bus not found" });
+    }
+
+    // Create a new payment entry
     const newPayment = new Payment({
-      bookingId: newBooking._id,
+      bookingId: oldBooking._id,
       userId,
-      amount: numberOfSeats * bus.price, // Assuming each seat costs 10 (this is just an example)
+      amount: numberOfSeats * bus.price, // Assuming 'bus.price' exists
       paymentStatus: "unpaid",
     });
     await newPayment.save();
 
-    res
-      .status(201)
-      .json({ message: "Booking added successfully", booking: newBooking });
+    //saving the seats
+    
+    saveSeats(busId, bookingId, userId, seatarr, date);
+
+    res.status(201).json({
+      message: "Booking confirmed successfully",
+      booking: oldBooking,
+      payment: newPayment,
+    });
   } catch (error) {
     console.error(error); // Log errors for debugging
-    res.status(500).json({ message: "Error saving booking" });
+    res.status(500).json({ message: "Error confirming booking", error });
   }
 };
 
